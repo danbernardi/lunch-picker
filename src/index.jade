@@ -1,0 +1,10 @@
+doctype html
+html(lang="en")
+  - var page = 'index'
+
+  include ./templates/head.jade
+
+  body(class=page)
+    canvas#renderCanvas
+
+    script(src="js/scripts.js")

@@ -1,9 +1,11 @@
+.DS_Store
+.dev/
+error_log
 
-.DS_STORE
-*.log
-node_modules
-dist
-coverage
-.idea/
-.yarn-cache
-build/tests.js
+node_modules/
+npm-debug.log
+.nodemonignore
+.sass-cache/
+
+#Ignore generated files
+public
