@@ -36,7 +36,76 @@ if (BABYLON.Engine.isSupported()) {
     return Math.floor(Math.random() * (max - min)) + min;
   }
 
-  let tiles = [];
+  let power;
+  let keyStart;
+  let keyEnd;
+  let keyIsHeld = false;
+  const meter = document.querySelector('.strengthMeter');
+  const meterBar = meter.querySelector('.meterBar');
+
+  const tl = new TimelineMax();
+  tl.to(meterBar, 4, { width: '100%', ease: Power3.easeOut }, 'start');
+  tl.to(meter, 0.1, { x: '+=10', yoyo: true, repeat: -1 }, 'start+=2.25');
+  tl.pause();
+
+  function onKeyDown (evt) {
+    const key = evt.sourceEvent.code;
+
+    if (key === 'Space' && !keyIsHeld) {
+      // console.log('keydown');
+      keyIsHeld = true;
+      keyStart = window.performance.now();
+      tl.play();
+    }
+  }
+
+  function mapRange(value, low1, high1, low2, high2) {
+    return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
+  }
+
+  function onKeyUp (evt) {
+    // console.log('keyUp');
+    if (keyStart) {
+      tl.pause();
+      tl.progress(0);
+      keyIsHeld = false;
+
+      keyEnd = window.performance.now();
+      // const difference = (55 - 200) / (keyEnd - keyStart);
+      const minStrength = 55;
+      const maxStrength = 200;
+      const minDiff = 60;
+      const maxDiff = 4000;
+
+      const oldBullet = scene.getMeshByName('bullet')
+      if (oldBullet) oldBullet.dispose();
+
+      const bullet = new BABYLON.Mesh.CreateBox('bullet', 0.5, scene);
+      bullet.physicsImposter = new BABYLON.PhysicsImpostor(bullet, BABYLON.PhysicsImpostor.BoxImpostor, { friction: 2, mass: 3, restitution: 0.3 }, scene);
+
+      console.log(tiles);
+      tiles.forEach((tile, index) => {
+        const triggerBulletCollision = (event) => {
+          tiles.forEach((tile, index) => { tile.material.emissiveColor = new BABYLON.Color3(0, 0, 0); });
+          tile.material.emissiveColor = new BABYLON.Color3(1, 1, 1); 
+        }
+
+        tile.actionManager = new BABYLON.ActionManager(scene);
+        tile.actionManager.registerAction(new BABYLON.ExecuteCodeAction({
+          trigger: BABYLON.ActionManager.OnIntersectionExitTrigger, parameter: bullet
+        }, triggerBulletCollision));
+      });
+
+      const mappedStrength = mapRange(keyEnd - keyStart, minDiff, maxDiff, minStrength, maxStrength);
+      console.log(mappedStrength); 
+      bullet.position.x = scene.activeCamera.position.x;
+      bullet.position.y = scene.activeCamera.position.y;
+      bullet.position.z = scene.activeCamera.position.z;
+      bullet.physicsImposter.applyImpulse(new BABYLON.Vector3(0, 0, -mappedStrength), bullet.getAbsolutePosition());
+    }
+  }
+
+  const tiles = [];
 
   function generateTiles (count) {
     tileData.forEach((data, i) => {
@@ -54,89 +123,7 @@ if (BABYLON.Engine.isSupported()) {
     });
   }
 
-  function generateBoxes(count) {
-    for (let i = 0; i < count; i++) {
-      const mesh = BABYLON.Mesh.CreateBox(`box${i}`, 2.0, scene);
-      mesh.position.y = getRandomInt(5, 20);
-      mesh.position.x = getRandomInt(-10, 10);
-      mesh.position.z = getRandomInt(-10, 10);
-      mesh.rotation.x = Math.PI/getRandomInt(0.01, 90);
-      mesh.rotation.y = Math.PI/getRandomInt(0.01, 90);
-      mesh.physicsImposter = new BABYLON.PhysicsImpostor(mesh, BABYLON.PhysicsImpostor.BoxImpostor, { friction: 0.3, mass: 3, restitution: getRandomInt(0.07, 1) }, scene);
-      mesh.actionManager = new BABYLON.ActionManager(scene);
-    };
-  }
-
   generateTiles(tileData);
-  // generateBoxes(1);
-
-  const box = BABYLON.Mesh.CreateBox(`box`, 2.0, scene);
-  box.position.y = getRandomInt(5, 20);
-  box.position.x = getRandomInt(-10, 10);
-  box.position.z = getRandomInt(-10, 10);
-  box.rotation.x = Math.PI/getRandomInt(0.01, 90);
-  box.rotation.y = Math.PI/getRandomInt(0.01, 90);
-  box.physicsImposter = new BABYLON.PhysicsImpostor(box, BABYLON.PhysicsImpostor.BoxImpostor, { friction: 0.3, mass: 3, restitution: 0.3 }, scene);
-  box.actionManager = new BABYLON.ActionManager(scene);
-
-  const triggerBoxCollision = (event) => {
-    console.log(event);
-  }
-
-  // box.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnIntersectionExitTrigger, (e) => { console.log(e); } ));
-
-  let power;
-  let keyStart;
-  let keyEnd;
-  let keyIsHeld = false;
-  const tl = new TimelineMax({ repeat: 2 });
-
-  function onKeyDown (evt) {
-    const key = evt.sourceEvent.code;
-
-    if (key === 'Space' && !keyIsHeld) {
-      console.log('keydown');
-      keyIsHeld = true;
-      keyStart = window.performance.now();
-      const meter = document.querySelector('.strengthMeter');
-      const meterBar = meter.querySelector('.meterBar');
-
-      tl.to(meterBar, 4, { width: '100%', ease: Power3.easeOut }, 'start');
-      tl.to(meter, 0.1, { x: '+=10', yoyo: true, repeat: -1 }, 'start+=2.25');
-    }
-  }
-
-  function mapRange(value, low1, high1, low2, high2) {
-    return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
-  }
-
-  function onKeyUp (evt) {
-    if (keyStart) {
-      tl.pause();
-      tl.progress(0);
-      keyIsHeld = false;
-
-      keyEnd = window.performance.now();
-      // const difference = (55 - 200) / (keyEnd - keyStart);
-      const minStrength = 55;
-      const maxStrength = 200;
-      const minDiff = 60;
-      const maxDiff = 4000;
-
-      const mappedStrength = mapRange(keyEnd - keyStart, minDiff, maxDiff, minStrength, maxStrength);
-
-      const bullet = new BABYLON.Mesh.CreateBox('bullet', 0.5, scene);
-      bullet.position.x = scene.activeCamera.position.x;
-      bullet.position.y = scene.activeCamera.position.y;
-      bullet.position.z = scene.activeCamera.position.z;
-      bullet.physicsImposter = new BABYLON.PhysicsImpostor(bullet, BABYLON.PhysicsImpostor.BoxImpostor, { friction: 2, mass: 3, restitution: 0.3 }, scene);
-      const camera = scene.activeCamera;
-      const cameraPosition = camera.position;
-      // debugger;
-      
-      bullet.physicsImposter.applyImpulse(new BABYLON.Vector3(0, 0, -mappedStrength), bullet.getAbsolutePosition());
-    }
-  }
 
   // keyboard events
   scene.actionManager = new BABYLON.ActionManager(scene); 
