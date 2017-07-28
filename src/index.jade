@@ -1,0 +1,12 @@
+doctype html
+html(lang="en")
+  - var page = 'index'
+
+  include ./templates/head.jade
+
+  body(class=page)
+    canvas#renderCanvas
+    .strengthMeter
+      .meterBar
+
+    script(src="js/scripts.js")
