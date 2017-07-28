@@ -108,7 +108,7 @@ if (BABYLON.Engine.isSupported()) {
         targetTile.material.emissiveColor = new BABYLON.Color3(1, 1, 1);
         clearTimeout(timeout);
         timeout = setTimeout(() => {
-          console.log(`You are going to... ${shuffledTiles[index].lunchPlace}`);
+          console.log(`Today for dev lunch, you are going to eat... ${shuffledTiles[index].lunchPlace}!`);
         }, 1000);
       }
 
