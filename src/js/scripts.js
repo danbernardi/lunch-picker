@@ -1,6 +1,26 @@
 import tileData from './data/tileData';
 import { TimelineMax, Power3 } from 'gsap';
 
+function shuffle (array) {
+  var i = 0, j = 0, temp = null;
+  const newArray = array.slice();
+
+  for (i = newArray.length - 1; i > 0; i -= 1) {
+    j = Math.floor(Math.random() * (i + 1));
+    temp = newArray[i];
+    newArray[i] = newArray[j];
+    newArray[j] = temp;
+  }
+
+  return newArray;
+}
+
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+const shuffledTiles = shuffle(tileData);
+
 if (BABYLON.Engine.isSupported()) {
   var canvas = document.getElementById("renderCanvas");
   var engine = new BABYLON.Engine(canvas, true);
@@ -72,43 +92,46 @@ if (BABYLON.Engine.isSupported()) {
 
       keyEnd = window.performance.now();
       // const difference = (55 - 200) / (keyEnd - keyStart);
-      const minStrength = 55;
-      const maxStrength = 200;
+      const minStrength = 100;
+      const maxStrength = 300;
       const minDiff = 60;
       const maxDiff = 4000;
 
-      const oldBullet = scene.getMeshByName('bullet')
-      if (oldBullet) oldBullet.dispose();
+      const olddisc = scene.getMeshByName('disc')
+      if (olddisc) olddisc.dispose();
 
-      const bullet = new BABYLON.Mesh.CreateBox('bullet', 0.5, scene);
-      bullet.physicsImposter = new BABYLON.PhysicsImpostor(bullet, BABYLON.PhysicsImpostor.BoxImpostor, { friction: 2, mass: 3, restitution: 0.3 }, scene);
+      const disc = new BABYLON.Mesh.CreateCylinder('disc', 0.1, 2, 2, 16, 0, scene);
+      disc.physicsImposter = new BABYLON.PhysicsImpostor(disc, BABYLON.PhysicsImpostor.CylinderImpostor, { friction: 3, mass: 6, restitution: 0.3 }, scene);
 
-      console.log(tiles);
+      const triggerdiscCollision = (event, targetTile, index) => {
+        tiles.forEach((tile, index) => { tile.material.emissiveColor = new BABYLON.Color3(0, 0, 0); });
+        targetTile.material.emissiveColor = new BABYLON.Color3(1, 1, 1); 
+        console.log(shuffledTiles[index].lunchPlace);
+      }
+
       tiles.forEach((tile, index) => {
-        const triggerBulletCollision = (event) => {
-          tiles.forEach((tile, index) => { tile.material.emissiveColor = new BABYLON.Color3(0, 0, 0); });
-          tile.material.emissiveColor = new BABYLON.Color3(1, 1, 1); 
-        }
-
         tile.actionManager = new BABYLON.ActionManager(scene);
         tile.actionManager.registerAction(new BABYLON.ExecuteCodeAction({
-          trigger: BABYLON.ActionManager.OnIntersectionExitTrigger, parameter: bullet
-        }, triggerBulletCollision));
+          trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: disc
+        }, evt => triggerdiscCollision(evt, tile, index)));
       });
 
       const mappedStrength = mapRange(keyEnd - keyStart, minDiff, maxDiff, minStrength, maxStrength);
-      console.log(mappedStrength); 
-      bullet.position.x = scene.activeCamera.position.x;
-      bullet.position.y = scene.activeCamera.position.y;
-      bullet.position.z = scene.activeCamera.position.z;
-      bullet.physicsImposter.applyImpulse(new BABYLON.Vector3(0, 0, -mappedStrength), bullet.getAbsolutePosition());
+      console.log(mappedStrength);
+      disc.position.x = scene.activeCamera.position.x;
+      disc.position.y = scene.activeCamera.position.y;
+      disc.position.z = scene.activeCamera.position.z;
+      disc.rotation.x = getRandomInt(-0.5, 0.5);
+      disc.rotation.y = getRandomInt(0.1, 3);
+      disc.rotation.z = getRandomInt(0.1, 3);
+      disc.physicsImposter.applyImpulse(new BABYLON.Vector3(0, 0, -mappedStrength), disc.getAbsolutePosition());
     }
   }
 
   const tiles = [];
 
-  function generateTiles (count) {
-    tileData.forEach((data, i) => {
+  function generateTiles (data) {
+    data.forEach((data, i) => {
       const tile = BABYLON.Mesh.CreateBox(`tile${i}`, 8, scene);
       const tileMaterial = new BABYLON.StandardMaterial(`tile${i}Material`, scene);
       tileMaterial.diffuseColor = data.color;
@@ -123,7 +146,7 @@ if (BABYLON.Engine.isSupported()) {
     });
   }
 
-  generateTiles(tileData);
+  generateTiles(shuffledTiles);
 
   // keyboard events
   scene.actionManager = new BABYLON.ActionManager(scene); 
