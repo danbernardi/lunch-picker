@@ -91,7 +91,6 @@ if (BABYLON.Engine.isSupported()) {
       keyIsHeld = false;
 
       keyEnd = window.performance.now();
-      // const difference = (55 - 200) / (keyEnd - keyStart);
       const minStrength = 100;
       const maxStrength = 300;
       const minDiff = 60;
@@ -102,11 +101,15 @@ if (BABYLON.Engine.isSupported()) {
 
       const disc = new BABYLON.Mesh.CreateCylinder('disc', 0.1, 2, 2, 16, 0, scene);
       disc.physicsImposter = new BABYLON.PhysicsImpostor(disc, BABYLON.PhysicsImpostor.CylinderImpostor, { friction: 3, mass: 6, restitution: 0.3 }, scene);
+      let timeout;
 
       const triggerdiscCollision = (event, targetTile, index) => {
         tiles.forEach((tile, index) => { tile.material.emissiveColor = new BABYLON.Color3(0, 0, 0); });
-        targetTile.material.emissiveColor = new BABYLON.Color3(1, 1, 1); 
-        console.log(shuffledTiles[index].lunchPlace);
+        targetTile.material.emissiveColor = new BABYLON.Color3(1, 1, 1);
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          console.log(`You are going to... ${shuffledTiles[index].lunchPlace}`);
+        }, 1000);
       }
 
       tiles.forEach((tile, index) => {
@@ -117,7 +120,8 @@ if (BABYLON.Engine.isSupported()) {
       });
 
       const mappedStrength = mapRange(keyEnd - keyStart, minDiff, maxDiff, minStrength, maxStrength);
-      console.log(mappedStrength);
+      console.log('-------------');
+      console.log(`Launch strength: ${mappedStrength}`);
       disc.position.x = scene.activeCamera.position.x;
       disc.position.y = scene.activeCamera.position.y;
       disc.position.z = scene.activeCamera.position.z;
